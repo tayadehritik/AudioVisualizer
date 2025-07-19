@@ -16,7 +16,12 @@ class AudioVisualizer(private val audioSessionId: Int) {
     private val _fftDataFlow = MutableStateFlow<ByteArray?>(null)
     val fftDataFlow: StateFlow<ByteArray?> = _fftDataFlow.asStateFlow()
     
-    fun initialize() {
+    init {
+        initialize()
+        start()
+    }
+    
+    private fun initialize() {
         try {
             Log.d(TAG, "Initializing AudioVisualizer with session ID: $audioSessionId")
             
@@ -74,7 +79,7 @@ class AudioVisualizer(private val audioSessionId: Int) {
         }
     }
     
-    fun start() {
+    private fun start() {
         try {
             visualizer?.enabled = true
             Log.d(TAG, "Visualizer started")

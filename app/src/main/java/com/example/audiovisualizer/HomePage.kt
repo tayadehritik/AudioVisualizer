@@ -67,32 +67,35 @@ fun HomePage() {
             }
         } else {
             val visualizer = remember {
-                AudioVisualizer(0).apply {
-                    try {
-                        initialize()
-                        start()
-                        Log.d("HomePage", "AudioVisualizer started successfully")
-                    } catch (e: Exception) {
-                        Log.e("HomePage", "Failed to start AudioVisualizer", e)
+                try {
+                    AudioVisualizer(0).also {
+                        Log.d("HomePage", "AudioVisualizer created successfully")
                     }
+                } catch (e: Exception) {
+                    Log.e("HomePage", "Failed to create AudioVisualizer", e)
+                    null
                 }
             }
-            
+
             DisposableEffect(visualizer) {
                 onDispose {
-                    visualizer.release()
+                    visualizer?.release()
                     Log.d("HomePage", "AudioVisualizer released")
                 }
             }
-            
+
             // Collect FFT data from the Flow as State
-            val fftData by visualizer.fftDataFlow.collectAsState()
-            
+            val fftData by visualizer?.fftDataFlow?.collectAsState() ?: remember {
+                mutableStateOf(
+                    null
+                )
+            }
+
             // Debug logging
             LaunchedEffect(fftData) {
                 Log.d("HomePage", "FFT data in UI: ${fftData?.size ?: "null"}")
             }
-            
+
             Column(
                 modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -107,20 +110,20 @@ fun HomePage() {
                     text = "Permission granted! Ready to visualize audio.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                
+
                 Text(
                     text = "FFT Data: ${fftData?.size ?: 0} bytes",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                
+
                 fftData?.let { data ->
                     Text(
                         text = "First 10 values: ${data.take(10).joinToString { it.toString() }}",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    
+
                     // Show more detailed data
                     Text(
                         text = "Data sample: ${data.take(5).map { it.toInt() }}",
