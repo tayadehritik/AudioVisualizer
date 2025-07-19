@@ -2,6 +2,9 @@ package com.tayadehritik.audiovisualizer
 
 import android.media.audiofx.Visualizer
 import android.util.Log
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @Suppress("ktlint:standard:no-trailing-spaces")
 class AudioVisualizer(private val audioSessionId: Int) {
@@ -10,16 +13,29 @@ class AudioVisualizer(private val audioSessionId: Int) {
     }
 
     private var visualizer: Visualizer? = null
-    private var latestFftData: ByteArray? = null
+    private val _fftDataFlow = MutableStateFlow<ByteArray?>(null)
+    val fftDataFlow: StateFlow<ByteArray?> = _fftDataFlow.asStateFlow()
     
     fun initialize() {
         try {
             Log.d(TAG, "Initializing AudioVisualizer with session ID: $audioSessionId")
             
             visualizer = Visualizer(audioSessionId).apply {
-                captureSize = Visualizer.getCaptureSizeRange()[1] // Max size
+                // Ensure visualizer is disabled before configuration
+                setEnabled(false)
                 
-                setDataCaptureListener(
+                // Set capture size to maximum available
+                val captureSizeRange = Visualizer.getCaptureSizeRange()
+                val captureSize = captureSizeRange[1] // Max size
+                val result = setCaptureSize(captureSize)
+                if (result != Visualizer.SUCCESS) {
+                    Log.e(TAG, "Failed to set capture size. Error code: $result")
+                } else {
+                    Log.d(TAG, "Capture size set to: $captureSize")
+                }
+                
+                // Set data capture listener
+                val listenerResult = setDataCaptureListener(
                     object : Visualizer.OnDataCaptureListener {
                         override fun onWaveFormDataCapture(
                             visualizer: Visualizer?,
@@ -35,17 +51,22 @@ class AudioVisualizer(private val audioSessionId: Int) {
                             samplingRate: Int,
                         ) {
                             fft?.let {
-                                latestFftData = it
-                                Log.d(TAG, "FFT data captured: ${it.size} bytes")
+                                // Create a copy of the array to ensure StateFlow detects the change
+                                _fftDataFlow.value = it.copyOf()
+                                Log.d(TAG, "FFT data captured: ${it.size} bytes, samplingRate: $samplingRate")
                             }
                         }
                     },
                     Visualizer.getMaxCaptureRate() / 2,
-                    false,
-                    true,
+                    false, // waveform
+                    true,  // fft
                 )
                 
-                Log.d(TAG, "Visualizer created successfully")
+                if (listenerResult != Visualizer.SUCCESS) {
+                    Log.e(TAG, "Failed to set data capture listener. Error code: $listenerResult")
+                }
+                
+                Log.d(TAG, "Visualizer created successfully. Capture rate: ${Visualizer.getMaxCaptureRate() / 2}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize visualizer", e)
@@ -75,5 +96,4 @@ class AudioVisualizer(private val audioSessionId: Int) {
         Log.d(TAG, "Visualizer released")
     }
     
-    fun getLatestFftData(): ByteArray? = latestFftData
 }
