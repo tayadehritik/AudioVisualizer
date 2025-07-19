@@ -3,11 +3,12 @@ package com.tayadehritik.audiovisualizer
 import android.media.audiofx.Visualizer
 import android.util.Log
 
+@Suppress("ktlint:standard:no-trailing-spaces")
 class AudioVisualizer(private val audioSessionId: Int) {
     companion object {
         private const val TAG = "AudioVisualizer"
     }
-    
+
     private var visualizer: Visualizer? = null
     private var latestFftData: ByteArray? = null
     
@@ -18,26 +19,31 @@ class AudioVisualizer(private val audioSessionId: Int) {
             visualizer = Visualizer(audioSessionId).apply {
                 captureSize = Visualizer.getCaptureSizeRange()[1] // Max size
                 
-                setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
-                    override fun onWaveFormDataCapture(
-                        visualizer: Visualizer?,
-                        waveform: ByteArray?,
-                        samplingRate: Int
-                    ) {
-                        // Ignore waveform for now
-                    }
-                    
-                    override fun onFftDataCapture(
-                        visualizer: Visualizer?,
-                        fft: ByteArray?,
-                        samplingRate: Int
-                    ) {
-                        fft?.let {
-                            latestFftData = it
-                            Log.d(TAG, "FFT data captured: ${it.size} bytes")
+                setDataCaptureListener(
+                    object : Visualizer.OnDataCaptureListener {
+                        override fun onWaveFormDataCapture(
+                            visualizer: Visualizer?,
+                            waveform: ByteArray?,
+                            samplingRate: Int,
+                        ) {
+                            // Ignore waveform for now
                         }
-                    }
-                }, Visualizer.getMaxCaptureRate() / 2, false, true)
+                    
+                        override fun onFftDataCapture(
+                            visualizer: Visualizer?,
+                            fft: ByteArray?,
+                            samplingRate: Int,
+                        ) {
+                            fft?.let {
+                                latestFftData = it
+                                Log.d(TAG, "FFT data captured: ${it.size} bytes")
+                            }
+                        }
+                    },
+                    Visualizer.getMaxCaptureRate() / 2,
+                    false,
+                    true,
+                )
                 
                 Log.d(TAG, "Visualizer created successfully")
             }
