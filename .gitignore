@@ -70,3 +70,6 @@ lint/tmp/
 
 # Android Profiling
 *.hprof
+
+# Claude AI context files
+CLAUDE.md
