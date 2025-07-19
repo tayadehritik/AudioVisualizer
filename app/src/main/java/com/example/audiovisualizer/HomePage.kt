@@ -18,7 +18,9 @@ import com.tayadehritik.audiovisualizer.rememberAudioVisualizer
 import com.tayadehritik.audiovisualizer.visualizers.AudioBarsVisualizer
 
 @Composable
-fun HomePage() {
+fun HomePage(
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     var hasRecordPermission by remember {
         mutableStateOf(
@@ -37,7 +39,7 @@ fun HomePage() {
         }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         if (!hasRecordPermission) {

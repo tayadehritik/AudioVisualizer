@@ -1,5 +1,6 @@
 package com.tayadehritik.audiovisualizer.visualizers
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -22,6 +23,8 @@ import java.nio.file.Files.size
 import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.sqrt
+
+private const val TAG = "AudioBarsVisualizer"
 
 /**
  * A composable that displays audio frequency data as animated bars.
