@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @Suppress("ktlint:standard:no-trailing-spaces")
-class AudioVisualizer(private val audioSessionId: Int) {
+internal class AudioVisualizer(private val audioSessionId: Int) {
     companion object {
         private const val TAG = "AudioVisualizer"
     }
@@ -16,12 +16,10 @@ class AudioVisualizer(private val audioSessionId: Int) {
     private val _fftDataFlow = MutableStateFlow<ByteArray?>(null)
     val fftDataFlow: StateFlow<ByteArray?> = _fftDataFlow.asStateFlow()
     
-    init {
-        initialize()
-        start()
-    }
+    private val _isActive = MutableStateFlow(false)
+    val isActive: StateFlow<Boolean> = _isActive.asStateFlow()
     
-    private fun initialize() {
+    fun initialize() {
         try {
             Log.d(TAG, "Initializing AudioVisualizer with session ID: $audioSessionId")
             
@@ -79,9 +77,10 @@ class AudioVisualizer(private val audioSessionId: Int) {
         }
     }
     
-    private fun start() {
+    fun start() {
         try {
             visualizer?.enabled = true
+            _isActive.value = true
             Log.d(TAG, "Visualizer started")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start visualizer", e)
@@ -91,6 +90,7 @@ class AudioVisualizer(private val audioSessionId: Int) {
     
     fun stop() {
         visualizer?.enabled = false
+        _isActive.value = false
         Log.d(TAG, "Visualizer stopped")
     }
     

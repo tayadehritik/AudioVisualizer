@@ -14,7 +14,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.tayadehritik.audiovisualizer.AudioVisualizer
+import com.tayadehritik.audiovisualizer.rememberAudioVisualizer
+import com.tayadehritik.audiovisualizer.visualizers.AudioBarsVisualizer
 
 @Composable
 fun HomePage() {
@@ -66,69 +67,59 @@ fun HomePage() {
                 }
             }
         } else {
-            val visualizer = remember {
-                try {
-                    AudioVisualizer(0).also {
-                        Log.d("HomePage", "AudioVisualizer created successfully")
-                    }
-                } catch (e: Exception) {
-                    Log.e("HomePage", "Failed to create AudioVisualizer", e)
-                    null
-                }
-            }
-
-            DisposableEffect(visualizer) {
-                onDispose {
-                    visualizer?.release()
-                    Log.d("HomePage", "AudioVisualizer released")
-                }
-            }
-
-            // Collect FFT data from the Flow as State
-            val fftData by visualizer?.fftDataFlow?.collectAsState() ?: remember {
-                mutableStateOf(
-                    null
-                )
-            }
-
-            // Debug logging
-            LaunchedEffect(fftData) {
-                Log.d("HomePage", "FFT data in UI: ${fftData?.size ?: "null"}")
-            }
+            // Use the new Compose-first API
+            val visualizerState = rememberAudioVisualizer(
+                audioSessionId = 0,
+                enabled = true
+            )
 
             Column(
-                modifier = Modifier.padding(32.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    text = "Welcome to Audio Visualizer",
+                    text = "Audio Visualizer",
                     style = MaterialTheme.typography.headlineLarge,
                 )
 
-                Text(
-                    text = "Permission granted! Ready to visualize audio.",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-
-                Text(
-                    text = "FFT Data: ${fftData?.size ?: 0} bytes",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                fftData?.let { data ->
+                if (visualizerState != null) {
+                    // Display the audio bars visualizer
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        AudioBarsVisualizer(
+                            state = visualizerState,
+                            modifier = Modifier.fillMaxSize(),
+                            barCount = 32,
+                            barColor = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    // Show active status
+                    val isActive by visualizerState.isActive.collectAsState()
                     Text(
-                        text = "First 10 values: ${data.take(10).joinToString { it.toString() }}",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth(),
+                        text = if (isActive) "Visualizer Active" else "Visualizer Paused",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    // Show more detailed data
-                    Text(
-                        text = "Data sample: ${data.take(5).map { it.toInt() }}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                } else {
+                    Card(
+                        modifier = Modifier.padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = "Failed to initialize audio visualizer. Make sure audio is playing on your device.",
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
             }
         }
