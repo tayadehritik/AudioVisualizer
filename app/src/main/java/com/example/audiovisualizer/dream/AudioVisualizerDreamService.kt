@@ -1,17 +1,25 @@
 package com.example.audiovisualizer.dream
 
-import android.service.dreams.DreamService
 import android.util.Log
-import android.widget.FrameLayout
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.tayadehritik.audiovisualizer.AudioVisualizerState
+import com.tayadehritik.audiovisualizer.createAudioVisualizer
+import com.tayadehritik.audiovisualizer.releaseAudioVisualizer
+import com.tayadehritik.audiovisualizer.visualizers.AudioBarsVisualizer
+import com.tayadehritik.audiovisualizer.visualizers.CircularBarsVisualizer
 
-class AudioVisualizerDreamService : DreamService() {
+class AudioVisualizerDreamService : DreamServiceCompat() {
     
     companion object {
         private const val TAG = "AudioVisualizerDream"
     }
     
-    private var audioVisualizer: AudioVisualizerManager? = null
-    private var audioBarsView: AudioBarsView? = null
+    private var visualizerState: AudioVisualizerState? = null
     
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -21,28 +29,29 @@ class AudioVisualizerDreamService : DreamService() {
         isInteractive = false  // No touch interaction needed for visualizer
         isFullscreen = true
         
-        // Create the layout
-        val frameLayout = FrameLayout(this)
-        setContentView(frameLayout)
-        
-        // Create and add the visualizer view
-        audioBarsView = AudioBarsView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        }
-        frameLayout.addView(audioBarsView)
-        
         // Initialize audio visualizer
         try {
-            audioVisualizer = AudioVisualizerManager(0).apply {
-                initialize()
+            visualizerState = createAudioVisualizer(audioSessionId = 0)
+            
+            if (visualizerState == null) {
+                Log.e(TAG, "Failed to create audio visualizer")
+                return
             }
             
-            // Connect visualizer data to view
-            audioVisualizer?.fftDataFlow?.let { flow ->
-                audioBarsView?.setFftDataFlow(flow)
+            // Set the Compose content using the DreamServiceCompat method
+            setComposeContent {
+                MaterialTheme {
+                    Surface(modifier = Modifier.background(Color.Black)) {
+                        // Use the circular visualizer with mirrored effect
+                        AudioBarsVisualizer(
+                            state = visualizerState!!,
+                            modifier = Modifier.fillMaxSize(),
+                            barCount = 32,
+                            barColor = MaterialTheme.colorScheme.primary,
+                            backgroundColor = Color.Black,
+                        )
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize audio visualizer", e)
@@ -55,8 +64,7 @@ class AudioVisualizerDreamService : DreamService() {
         
         // Start the visualizer
         try {
-            audioVisualizer?.start()
-            audioBarsView?.startAnimation()
+            visualizerState?.resume()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start visualizer", e)
         }
@@ -66,9 +74,8 @@ class AudioVisualizerDreamService : DreamService() {
         super.onDreamingStopped()
         Log.d(TAG, "onDreamingStopped")
         
-        // Stop the visualizer
-        audioBarsView?.stopAnimation()
-        audioVisualizer?.stop()
+        // Pause the visualizer
+        visualizerState?.pause()
     }
     
     override fun onDetachedFromWindow() {
@@ -76,10 +83,9 @@ class AudioVisualizerDreamService : DreamService() {
         Log.d(TAG, "onDetachedFromWindow")
         
         // Clean up resources
-        audioBarsView?.cleanup()
-        audioBarsView = null
-        
-        audioVisualizer?.release()
-        audioVisualizer = null
+        visualizerState?.let {
+            releaseAudioVisualizer(it)
+        }
+        visualizerState = null
     }
 }
