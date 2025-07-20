@@ -73,3 +73,11 @@ lint/tmp/
 
 # Claude AI context files
 CLAUDE.md
+
+# Kotlin compiler/build files
+.kotlin/
+*.kotlin_module
+.kotlin_cache/
+
+# Build monitoring
+build-times.log
