@@ -16,8 +16,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tayadehritik.audiovisualizer.AudioVisualizerState
 import java.nio.file.Files.size
 import kotlin.math.abs
@@ -101,6 +107,60 @@ fun AudioBarsVisualizer(
                     size = Size(barActualWidth, animatedHeight)
                 )
             }
+        }
+        
+        // Draw beat indicator circle if beat detection is enabled
+        if (beatDetectionState.isEnabled) {
+            val centerX = size.width / 2f
+            val centerY = size.height * 0.3f // Position in upper portion
+            val baseRadius = with(density) { 40.dp.toPx() }
+            val maxRadius = with(density) { 80.dp.toPx() }
+            
+            // Calculate circle radius based on beat intensity
+            val circleRadius = baseRadius + (animatedBeatIntensity * (maxRadius - baseRadius))
+            
+            // Draw outer glow when beat is detected
+            if (animatedBeatIntensity > 0.1f) {
+                val glowAlpha = (animatedBeatIntensity * 0.3f).coerceIn(0f, 0.3f)
+                val glowRadius = circleRadius * 1.5f
+                
+                drawCircle(
+                    color = barColor.copy(alpha = glowAlpha),
+                    radius = glowRadius,
+                    center = Offset(centerX, centerY)
+                )
+            }
+            
+            // Draw main circle
+            val circleColor = if (animatedBeatIntensity > 0.1f) {
+                barColor.copy(
+                    red = (barColor.red + animatedBeatIntensity * 0.4f).coerceIn(0f, 1f),
+                    green = (barColor.green + animatedBeatIntensity * 0.4f).coerceIn(0f, 1f),
+                    blue = (barColor.blue + animatedBeatIntensity * 0.4f).coerceIn(0f, 1f)
+                )
+            } else {
+                barColor.copy(alpha = 0.5f)
+            }
+            
+            drawCircle(
+                color = circleColor,
+                radius = circleRadius,
+                center = Offset(centerX, centerY)
+            )
+            
+            // Draw inner circle for better visibility
+            drawCircle(
+                color = backgroundColor,
+                radius = circleRadius * 0.8f,
+                center = Offset(centerX, centerY)
+            )
+            
+            // Draw center dot
+            drawCircle(
+                color = circleColor,
+                radius = circleRadius * 0.15f,
+                center = Offset(centerX, centerY)
+            )
         }
     }
 }

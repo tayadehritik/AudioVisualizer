@@ -172,8 +172,9 @@ internal class AudioVisualizer(private val audioSessionId: Int) {
     }
     
     private fun processBeatDetection(fft: ByteArray) {
-        // Calculate energy from FFT magnitude data
-        val energy = calculateEnergy(fft)
+        // Calculate energy from FFT magnitude data for the selected frequency band
+        val samplingRate = visualizer?.samplingRate ?: 44100
+        val energy = calculateEnergy(fft, beatDetectionConfig.frequencyBand, samplingRate)
         
         // Add to history
         energyHistory.addSample(energy)
@@ -232,22 +233,38 @@ internal class AudioVisualizer(private val audioSessionId: Int) {
         }
     }
     
-    private fun calculateEnergy(fft: ByteArray): Float {
+    private fun calculateEnergy(fft: ByteArray, frequencyBand: FrequencyBand, samplingRate: Int): Float {
         // FFT data is in format: [real0, imag0, real1, imag1, ...]
         // We only need magnitude from first half (second half is mirror)
-        var totalEnergy = 0.0
         val halfSize = fft.size / 2
+        val nyquistFreq = samplingRate / 2.0
         
-        for (i in 0 until halfSize step 2) {
+        // Calculate FFT bin indices for the frequency band
+        val startBin = frequencyToFftBin(frequencyBand.minHz.toDouble(), nyquistFreq, halfSize / 2)
+        val endBin = frequencyToFftBin(frequencyBand.maxHz.toDouble(), nyquistFreq, halfSize / 2)
+        
+        var totalEnergy = 0.0
+        var binCount = 0
+        
+        // Only process bins within the frequency band
+        for (binIndex in startBin..endBin) {
+            val i = binIndex * 2 // Convert to byte array index
             if (i + 1 < fft.size) {
                 val real = fft[i].toFloat()
                 val imag = fft[i + 1].toFloat()
                 val magnitude = sqrt(real.pow(2) + imag.pow(2))
                 totalEnergy += magnitude.toDouble()
+                binCount++
             }
         }
         
-        return (totalEnergy / (halfSize / 2)).toFloat()
+        return if (binCount > 0) (totalEnergy / binCount).toFloat() else 0f
+    }
+    
+    private fun frequencyToFftBin(frequency: Double, nyquistFreq: Double, fftBinCount: Int): Int {
+        // Convert frequency to FFT bin index
+        val binIndex = (frequency / nyquistFreq * fftBinCount).toInt()
+        return binIndex.coerceIn(0, fftBinCount - 1)
     }
     
 }

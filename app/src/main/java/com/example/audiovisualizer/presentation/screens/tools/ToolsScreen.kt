@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.audiovisualizer.presentation.viewmodels.ToolsViewModel
 import com.example.audiovisualizer.presentation.viewmodels.ViewModelFactory
+import com.tayadehritik.audiovisualizer.FrequencyBand
 import kotlin.math.roundToInt
 
 /**
@@ -233,6 +234,51 @@ fun ToolsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                            }
+                            
+                            // Frequency Band Selection
+                            Column {
+                                Text(
+                                    text = "Frequency Band",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                                
+                                var expanded by remember { mutableStateOf(false) }
+                                val selectedBand = FrequencyBand.values().find { it.name == uiState.beatFrequencyBand } 
+                                    ?: FrequencyBand.ALL_FREQUENCIES
+                                
+                                ExposedDropdownMenuBox(
+                                    expanded = expanded,
+                                    onExpandedChange = { expanded = it }
+                                ) {
+                                    OutlinedTextField(
+                                        value = selectedBand.displayName,
+                                        onValueChange = { },
+                                        readOnly = true,
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .menuAnchor()
+                                    )
+                                    
+                                    ExposedDropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+                                        FrequencyBand.values().forEach { band ->
+                                            DropdownMenuItem(
+                                                text = { Text(band.displayName) },
+                                                onClick = {
+                                                    viewModel.updateBeatFrequencyBand(band.name)
+                                                    expanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

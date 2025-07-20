@@ -99,6 +99,17 @@ class SettingsRepository(
     }
     
     /**
+     * Update beat frequency band.
+     */
+    suspend fun updateBeatFrequencyBand(band: String) {
+        val current = getSettingsOnce()
+        settingsDao.updateSettings(current.copy(
+            beatFrequencyBand = band,
+            lastUpdated = System.currentTimeMillis()
+        ))
+    }
+    
+    /**
      * Update all settings at once.
      */
     suspend fun updateSettings(settings: VisualizerSettings) {

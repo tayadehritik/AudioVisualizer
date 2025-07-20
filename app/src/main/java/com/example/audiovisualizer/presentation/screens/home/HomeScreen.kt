@@ -122,14 +122,24 @@ fun HomeScreen(
                     )
                     
                     // Apply beat detection settings
-                    LaunchedEffect(currentSettings.beatDetectionEnabled, currentSettings.beatSensitivity, currentSettings.beatSmoothingFactor) {
+                    LaunchedEffect(
+                        currentSettings.beatDetectionEnabled, 
+                        currentSettings.beatSensitivity, 
+                        currentSettings.beatSmoothingFactor,
+                        currentSettings.beatFrequencyBand
+                    ) {
                         visualizerState?.let { state ->
                             state.setBeatDetectionEnabled(currentSettings.beatDetectionEnabled)
                             if (currentSettings.beatDetectionEnabled) {
+                                val frequencyBand = com.tayadehritik.audiovisualizer.FrequencyBand.values()
+                                    .find { it.name == currentSettings.beatFrequencyBand } 
+                                    ?: com.tayadehritik.audiovisualizer.FrequencyBand.ALL_FREQUENCIES
+                                    
                                 state.setBeatDetectionConfig(
                                     com.tayadehritik.audiovisualizer.BeatDetectionConfig(
                                         sensitivity = currentSettings.beatSensitivity,
-                                        smoothingFactor = currentSettings.beatSmoothingFactor
+                                        smoothingFactor = currentSettings.beatSmoothingFactor,
+                                        frequencyBand = frequencyBand
                                     )
                                 )
                             }
@@ -203,6 +213,15 @@ fun HomeScreen(
                                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }
+                                        
+                                        val frequencyBand = com.tayadehritik.audiovisualizer.FrequencyBand.values()
+                                            .find { it.name == currentSettings.beatFrequencyBand } 
+                                            ?: com.tayadehritik.audiovisualizer.FrequencyBand.ALL_FREQUENCIES
+                                        Text(
+                                            text = "Frequency: ${frequencyBand.displayName}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
                                     }
                                     
                                     Text(

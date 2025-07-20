@@ -2,12 +2,23 @@ package com.tayadehritik.audiovisualizer
 
 import kotlinx.coroutines.flow.StateFlow
 
+enum class FrequencyBand(val displayName: String, val minHz: Int, val maxHz: Int) {
+    ALL_FREQUENCIES("All Frequencies", 20, 20000),
+    SUB_BASS("Sub Bass (20-60Hz)", 20, 60),
+    BASS("Bass (60-250Hz)", 60, 250),
+    LOW_MIDS("Low Mids (250-500Hz)", 250, 500),
+    MIDS("Mids (500-2kHz)", 500, 2000),
+    HIGH_MIDS("High Mids (2-4kHz)", 2000, 4000),
+    TREBLE("Treble (4-20kHz)", 4000, 20000)
+}
+
 data class BeatDetectionConfig(
     val sensitivity: Float = 0.7f,
     val ignoreTimeMs: Long = 100L,
     val peakPersistenceMs: Long = 200L,
     val historyWindowMs: Long = 1500L,
-    val smoothingFactor: Float = 0.8f
+    val smoothingFactor: Float = 0.8f,
+    val frequencyBand: FrequencyBand = FrequencyBand.ALL_FREQUENCIES
 )
 
 data class BeatEvent(

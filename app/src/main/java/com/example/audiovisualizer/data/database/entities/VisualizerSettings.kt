@@ -19,6 +19,7 @@ data class VisualizerSettings(
     val beatDetectionEnabled: Boolean = false,
     val beatSensitivity: Float = 0.7f,
     val beatSmoothingFactor: Float = 0.8f,
+    val beatFrequencyBand: String = "ALL_FREQUENCIES",
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
     companion object {

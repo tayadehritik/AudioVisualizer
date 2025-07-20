@@ -39,6 +39,7 @@ class ToolsViewModel(
                     beatDetectionEnabled = settings.beatDetectionEnabled,
                     beatSensitivity = settings.beatSensitivity,
                     beatSmoothingFactor = settings.beatSmoothingFactor,
+                    beatFrequencyBand = settings.beatFrequencyBand,
                     isLoading = false
                 )
             }
@@ -87,6 +88,13 @@ class ToolsViewModel(
         }
     }
     
+    fun updateBeatFrequencyBand(band: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(beatFrequencyBand = band)
+            settingsRepository.updateBeatFrequencyBand(band)
+        }
+    }
+    
     fun resetToDefaults() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -112,5 +120,6 @@ data class ToolsUiState(
     val beatSensitivityRange: ClosedFloatingPointRange<Float> = 0.3f..1.0f,
     val beatSmoothingFactor: Float = 0.8f,
     val beatSmoothingRange: ClosedFloatingPointRange<Float> = 0.5f..0.95f,
+    val beatFrequencyBand: String = "ALL_FREQUENCIES",
     val isLoading: Boolean = true
 )
