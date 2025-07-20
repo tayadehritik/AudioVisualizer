@@ -24,6 +24,17 @@ class AudioVisualizerState internal constructor(
     val isActive: StateFlow<Boolean> = audioVisualizer.isActive
     
     /**
+     * Flow of beat detection events.
+     * Emits BeatEvent objects when a beat is detected (if beat detection is enabled).
+     */
+    val beatFlow: StateFlow<BeatEvent?> = audioVisualizer.beatFlow
+    
+    /**
+     * Current state of the beat detection system.
+     */
+    val beatDetectionState: StateFlow<BeatDetectionState> = audioVisualizer.beatDetectionState
+    
+    /**
      * Pauses the audio visualization.
      * Call this when the UI is not visible to save battery.
      */
@@ -37,6 +48,22 @@ class AudioVisualizerState internal constructor(
      */
     fun resume() {
         audioVisualizer.start()
+    }
+    
+    /**
+     * Enables or disables beat detection.
+     * When disabled, beatFlow will stop emitting events.
+     */
+    fun setBeatDetectionEnabled(enabled: Boolean) {
+        audioVisualizer.setBeatDetectionEnabled(enabled)
+    }
+    
+    /**
+     * Updates the beat detection configuration.
+     * This allows fine-tuning of sensitivity and other parameters.
+     */
+    fun setBeatDetectionConfig(config: BeatDetectionConfig) {
+        audioVisualizer.setBeatDetectionConfig(config)
     }
     
     internal fun release() {

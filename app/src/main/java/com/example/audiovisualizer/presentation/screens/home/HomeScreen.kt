@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -33,6 +34,7 @@ fun HomeScreen(
     )
 ) {
     val context = LocalContext.current
+    val view = LocalView.current
     val uiState by viewModel.uiState.collectAsState()
     val settings by viewModel.settings.collectAsState(initial = null)
     
@@ -53,6 +55,16 @@ fun HomeScreen(
             viewModel.onPermissionGranted()
         } else {
             viewModel.onPermissionDenied()
+        }
+    }
+    
+    // Keep screen on while visualizer is shown and permission is granted
+    DisposableEffect(hasRecordPermission) {
+        if (hasRecordPermission) {
+            view.keepScreenOn = true
+        }
+        onDispose {
+            view.keepScreenOn = false
         }
     }
     
@@ -109,6 +121,21 @@ fun HomeScreen(
                         enabled = true
                     )
                     
+                    // Apply beat detection settings
+                    LaunchedEffect(currentSettings.beatDetectionEnabled, currentSettings.beatSensitivity, currentSettings.beatSmoothingFactor) {
+                        visualizerState?.let { state ->
+                            state.setBeatDetectionEnabled(currentSettings.beatDetectionEnabled)
+                            if (currentSettings.beatDetectionEnabled) {
+                                state.setBeatDetectionConfig(
+                                    com.tayadehritik.audiovisualizer.BeatDetectionConfig(
+                                        sensitivity = currentSettings.beatSensitivity,
+                                        smoothingFactor = currentSettings.beatSmoothingFactor
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -133,6 +160,7 @@ fun HomeScreen(
                             
                             // Show active status and settings info
                             val isActive by visualizerState.isActive.collectAsState()
+                            val beatDetectionState by visualizerState.beatDetectionState.collectAsState()
                             
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -157,6 +185,24 @@ fun HomeScreen(
                                             text = "Bars: ${currentSettings.barCount}",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
+                                    }
+                                    
+                                    if (beatDetectionState.isEnabled) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Beat Detection: ON",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "Intensity: ${String.format("%.0f%%", beatDetectionState.beatIntensity * 100)}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
                                     }
                                     
                                     Text(

@@ -16,6 +16,9 @@ data class VisualizerSettings(
     val animationSpeed: Int = 100, // milliseconds
     val sensitivity: Float = 1.0f,
     val smoothingEnabled: Boolean = true,
+    val beatDetectionEnabled: Boolean = false,
+    val beatSensitivity: Float = 0.7f,
+    val beatSmoothingFactor: Float = 0.8f,
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
     companion object {

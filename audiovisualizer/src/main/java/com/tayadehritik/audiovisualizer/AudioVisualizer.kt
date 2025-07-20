@@ -5,6 +5,8 @@ import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 @Suppress("ktlint:standard:no-trailing-spaces")
 internal class AudioVisualizer(private val audioSessionId: Int) {
@@ -19,7 +21,17 @@ internal class AudioVisualizer(private val audioSessionId: Int) {
     private val _isActive = MutableStateFlow(false)
     val isActive: StateFlow<Boolean> = _isActive.asStateFlow()
     
+    private val _beatFlow = MutableStateFlow<BeatEvent?>(null)
+    val beatFlow: StateFlow<BeatEvent?> = _beatFlow.asStateFlow()
+    
+    private val _beatDetectionState = MutableStateFlow(BeatDetectionState())
+    val beatDetectionState: StateFlow<BeatDetectionState> = _beatDetectionState.asStateFlow()
+    
     private var fftCallbackCount = 0
+    private var beatDetectionConfig = BeatDetectionConfig()
+    private val energyHistory = EnergyHistory(beatDetectionConfig.historyWindowMs)
+    private var lastBeatTime = 0L
+    private var smoothedIntensity = 0f
     
     fun initialize() {
         try {
@@ -65,6 +77,11 @@ internal class AudioVisualizer(private val audioSessionId: Int) {
                             
                             // Create a copy of the array to ensure StateFlow detects the change
                             _fftDataFlow.value = fft.copyOf()
+                            
+                            // Process beat detection if enabled
+                            if (_beatDetectionState.value.isEnabled) {
+                                processBeatDetection(fft)
+                            }
                             
                             // Log detailed FFT information
                             Log.d(TAG, "FFT data captured: ${fft.size} bytes, samplingRate: $samplingRate")
@@ -140,6 +157,97 @@ internal class AudioVisualizer(private val audioSessionId: Int) {
         visualizer?.release()
         visualizer = null
         Log.d(TAG, "Visualizer released")
+    }
+    
+    fun setBeatDetectionEnabled(enabled: Boolean) {
+        _beatDetectionState.value = _beatDetectionState.value.copy(isEnabled = enabled)
+        if (!enabled) {
+            energyHistory.clear()
+            smoothedIntensity = 0f
+        }
+    }
+    
+    fun setBeatDetectionConfig(config: BeatDetectionConfig) {
+        beatDetectionConfig = config
+    }
+    
+    private fun processBeatDetection(fft: ByteArray) {
+        // Calculate energy from FFT magnitude data
+        val energy = calculateEnergy(fft)
+        
+        // Add to history
+        energyHistory.addSample(energy)
+        
+        // Get statistics
+        val avgEnergy = energyHistory.getAverage()
+        val variance = energyHistory.getVariance()
+        val stdDev = sqrt(variance)
+        
+        // Update state
+        _beatDetectionState.value = _beatDetectionState.value.copy(
+            currentEnergy = energy,
+            averageEnergy = avgEnergy,
+            energyVariance = variance
+        )
+        
+        // Beat detection using dynamic threshold
+        val threshold = avgEnergy + (beatDetectionConfig.sensitivity * stdDev)
+        val currentTime = System.currentTimeMillis()
+        
+        if (energy > threshold && 
+            currentTime - lastBeatTime > beatDetectionConfig.ignoreTimeMs) {
+            
+            // Calculate beat intensity (0-1 range)
+            val rawIntensity = if (stdDev > 0) {
+                ((energy - avgEnergy) / stdDev).coerceIn(0f, 3f) / 3f
+            } else {
+                0f
+            }
+            
+            // Apply smoothing
+            smoothedIntensity = smoothedIntensity * beatDetectionConfig.smoothingFactor + 
+                               rawIntensity * (1f - beatDetectionConfig.smoothingFactor)
+            
+            // Emit beat event
+            _beatFlow.value = BeatEvent(
+                timestamp = currentTime,
+                intensity = smoothedIntensity,
+                frequency = 0f // Could calculate dominant frequency if needed
+            )
+            
+            lastBeatTime = currentTime
+            
+            _beatDetectionState.value = _beatDetectionState.value.copy(
+                lastBeatTimestamp = currentTime,
+                beatIntensity = smoothedIntensity
+            )
+            
+            Log.v(TAG, "Beat detected! Energy: $energy, Avg: $avgEnergy, Intensity: $smoothedIntensity")
+        } else {
+            // Decay intensity when no beat
+            smoothedIntensity *= 0.95f
+            _beatDetectionState.value = _beatDetectionState.value.copy(
+                beatIntensity = smoothedIntensity
+            )
+        }
+    }
+    
+    private fun calculateEnergy(fft: ByteArray): Float {
+        // FFT data is in format: [real0, imag0, real1, imag1, ...]
+        // We only need magnitude from first half (second half is mirror)
+        var totalEnergy = 0.0
+        val halfSize = fft.size / 2
+        
+        for (i in 0 until halfSize step 2) {
+            if (i + 1 < fft.size) {
+                val real = fft[i].toFloat()
+                val imag = fft[i + 1].toFloat()
+                val magnitude = sqrt(real.pow(2) + imag.pow(2))
+                totalEnergy += magnitude.toDouble()
+            }
+        }
+        
+        return (totalEnergy / (halfSize / 2)).toFloat()
     }
     
 }

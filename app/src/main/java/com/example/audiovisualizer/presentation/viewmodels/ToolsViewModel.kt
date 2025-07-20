@@ -36,6 +36,9 @@ class ToolsViewModel(
                     animationSpeed = settings.animationSpeed,
                     sensitivity = settings.sensitivity,
                     smoothingEnabled = settings.smoothingEnabled,
+                    beatDetectionEnabled = settings.beatDetectionEnabled,
+                    beatSensitivity = settings.beatSensitivity,
+                    beatSmoothingFactor = settings.beatSmoothingFactor,
                     isLoading = false
                 )
             }
@@ -63,6 +66,27 @@ class ToolsViewModel(
         }
     }
     
+    fun updateBeatDetectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(beatDetectionEnabled = enabled)
+            settingsRepository.updateBeatDetectionEnabled(enabled)
+        }
+    }
+    
+    fun updateBeatSensitivity(sensitivity: Float) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(beatSensitivity = sensitivity)
+            settingsRepository.updateBeatSensitivity(sensitivity)
+        }
+    }
+    
+    fun updateBeatSmoothingFactor(factor: Float) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(beatSmoothingFactor = factor)
+            settingsRepository.updateBeatSmoothingFactor(factor)
+        }
+    }
+    
     fun resetToDefaults() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -83,5 +107,10 @@ data class ToolsUiState(
     val sensitivity: Float = 1.0f,
     val sensitivityRange: ClosedFloatingPointRange<Float> = 0.5f..2.0f,
     val smoothingEnabled: Boolean = true,
+    val beatDetectionEnabled: Boolean = false,
+    val beatSensitivity: Float = 0.7f,
+    val beatSensitivityRange: ClosedFloatingPointRange<Float> = 0.3f..1.0f,
+    val beatSmoothingFactor: Float = 0.8f,
+    val beatSmoothingRange: ClosedFloatingPointRange<Float> = 0.5f..0.95f,
     val isLoading: Boolean = true
 )

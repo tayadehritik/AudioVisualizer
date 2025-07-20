@@ -10,7 +10,7 @@ import com.example.audiovisualizer.data.database.entities.VisualizerSettings
  */
 @Database(
     entities = [VisualizerSettings::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

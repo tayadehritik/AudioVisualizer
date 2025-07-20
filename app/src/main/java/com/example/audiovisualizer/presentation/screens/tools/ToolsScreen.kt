@@ -1,6 +1,11 @@
 package com.example.audiovisualizer.presentation.screens.tools
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -49,6 +54,7 @@ fun ToolsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
@@ -161,6 +167,78 @@ fun ToolsScreen(
                 }
             }
             
+            // Beat Detection Setting
+            SettingCard(
+                title = "Beat Detection Mode",
+                description = "Enable energy-based beat detection for more responsive visualization"
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Beat Detection",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Switch(
+                            checked = uiState.beatDetectionEnabled,
+                            onCheckedChange = { viewModel.updateBeatDetectionEnabled(it) }
+                        )
+                    }
+                    
+                    AnimatedVisibility(
+                        visible = uiState.beatDetectionEnabled,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(top = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Beat Sensitivity
+                            Column {
+                                Text(
+                                    text = "Sensitivity: ${String.format("%.1f", uiState.beatSensitivity)}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Slider(
+                                    value = uiState.beatSensitivity,
+                                    onValueChange = { viewModel.updateBeatSensitivity(it) },
+                                    valueRange = uiState.beatSensitivityRange,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Text(
+                                    text = "Higher = more sensitive to beats",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            // Beat Smoothing
+                            Column {
+                                Text(
+                                    text = "Smoothing: ${String.format("%.2f", uiState.beatSmoothingFactor)}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Slider(
+                                    value = uiState.beatSmoothingFactor,
+                                    onValueChange = { viewModel.updateBeatSmoothingFactor(it) },
+                                    valueRange = uiState.beatSmoothingRange,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Text(
+                                    text = "Higher = smoother transitions",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Coming Soon Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -180,12 +258,15 @@ fun ToolsScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "• Color customization\n• Sensitivity adjustment\n• Smoothing options\n• FFT window size\n• Export/Import settings",
+                        text = "• Color customization\n• FFT window size\n• Export/Import settings\n• Advanced visualizer types",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
+            
+            // Bottom padding for scroll
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

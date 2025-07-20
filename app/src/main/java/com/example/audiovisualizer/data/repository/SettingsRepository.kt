@@ -66,6 +66,39 @@ class SettingsRepository(
     }
     
     /**
+     * Update beat detection enabled state.
+     */
+    suspend fun updateBeatDetectionEnabled(enabled: Boolean) {
+        val current = getSettingsOnce()
+        settingsDao.updateSettings(current.copy(
+            beatDetectionEnabled = enabled,
+            lastUpdated = System.currentTimeMillis()
+        ))
+    }
+    
+    /**
+     * Update beat sensitivity.
+     */
+    suspend fun updateBeatSensitivity(sensitivity: Float) {
+        val current = getSettingsOnce()
+        settingsDao.updateSettings(current.copy(
+            beatSensitivity = sensitivity,
+            lastUpdated = System.currentTimeMillis()
+        ))
+    }
+    
+    /**
+     * Update beat smoothing factor.
+     */
+    suspend fun updateBeatSmoothingFactor(factor: Float) {
+        val current = getSettingsOnce()
+        settingsDao.updateSettings(current.copy(
+            beatSmoothingFactor = factor,
+            lastUpdated = System.currentTimeMillis()
+        ))
+    }
+    
+    /**
      * Update all settings at once.
      */
     suspend fun updateSettings(settings: VisualizerSettings) {

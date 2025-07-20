@@ -44,6 +44,7 @@ fun AudioBarsVisualizer(
     backgroundColor: Color = MaterialTheme.colorScheme.surface
 ) {
     val fftData by state.fftData.collectAsState()
+    val beatDetectionState by state.beatDetectionState.collectAsState()
     val density = LocalDensity.current
     
     // Process FFT data into bar heights
@@ -60,6 +61,13 @@ fun AudioBarsVisualizer(
         ).value
     }
     
+    // Animate beat intensity for pulse effect
+    val animatedBeatIntensity by animateFloatAsState(
+        targetValue = if (beatDetectionState.isEnabled) beatDetectionState.beatIntensity else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "beat_intensity"
+    )
+    
     Canvas(modifier = modifier.fillMaxSize()) {
         drawRect(backgroundColor, size = size)
         
@@ -68,13 +76,27 @@ fun AudioBarsVisualizer(
             val barSpacing = with(density) { 2.dp.toPx() }
             
             animatedHeights.forEachIndexed { index, normalizedHeight ->
-                val animatedHeight = normalizedHeight * size.height * 0.8f
+                // Apply beat pulse effect
+                val beatMultiplier = 1f + (animatedBeatIntensity * 0.3f)
+                val animatedHeight = normalizedHeight * size.height * 0.8f * beatMultiplier
+                
                 val left = index * barWidth + barSpacing / 2
                 val barActualWidth = barWidth - barSpacing
                 val top = size.height - animatedHeight
                 
+                // Brighten color on beat
+                val adjustedColor = if (beatDetectionState.isEnabled && animatedBeatIntensity > 0.1f) {
+                    barColor.copy(
+                        red = (barColor.red + animatedBeatIntensity * 0.3f).coerceIn(0f, 1f),
+                        green = (barColor.green + animatedBeatIntensity * 0.3f).coerceIn(0f, 1f),
+                        blue = (barColor.blue + animatedBeatIntensity * 0.3f).coerceIn(0f, 1f)
+                    )
+                } else {
+                    barColor
+                }
+                
                 drawRect(
-                    color = barColor,
+                    color = adjustedColor,
                     topLeft = Offset(left, top),
                     size = Size(barActualWidth, animatedHeight)
                 )
