@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.tayadehritik.audiovisualizer.rememberAudioVisualizer
 import com.tayadehritik.audiovisualizer.visualizers.AudioBarsVisualizer
-import com.tayadehritik.audiovisualizer.visualizers.CircularBarsVisualizer
 
 @Composable
 fun HomePage(
@@ -75,9 +74,6 @@ fun HomePage(
                 audioSessionId = 0,
                 enabled = true
             )
-            
-            // State to track which visualizer to show
-            var showCircular by remember { mutableStateOf(false) }
 
             Column(
                 modifier = Modifier
@@ -92,49 +88,18 @@ fun HomePage(
                 )
 
                 if (visualizerState != null) {
-                    // Toggle buttons for switching visualizers
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        FilterChip(
-                            selected = !showCircular,
-                            onClick = { showCircular = false },
-                            label = { Text("Bar Visualizer") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = showCircular,
-                            onClick = { showCircular = true },
-                            label = { Text("Circular Visualizer") },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    
-                    // Display the selected visualizer
+                    // Display the audio bars visualizer
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(300.dp)
                     ) {
-                        if (showCircular) {
-                            CircularBarsVisualizer(
-                                state = visualizerState,
-                                modifier = Modifier.fillMaxSize(),
-                                barCount = 64,
-                                innerRadiusFraction = 0.3f,
-                                maxBarHeightFraction = 0.4f,
-                                barColor = MaterialTheme.colorScheme.primary,
-                                mirrored = true
-                            )
-                        } else {
-                            AudioBarsVisualizer(
-                                state = visualizerState,
-                                modifier = Modifier.fillMaxSize(),
-                                barCount = 32,
-                                barColor = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        AudioBarsVisualizer(
+                            state = visualizerState,
+                            modifier = Modifier.fillMaxSize(),
+                            barCount = 32,
+                            barColor = MaterialTheme.colorScheme.primary
+                        )
                     }
                     
                     // Show active status

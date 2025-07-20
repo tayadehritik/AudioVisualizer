@@ -11,7 +11,6 @@ import com.tayadehritik.audiovisualizer.AudioVisualizerState
 import com.tayadehritik.audiovisualizer.createAudioVisualizer
 import com.tayadehritik.audiovisualizer.releaseAudioVisualizer
 import com.tayadehritik.audiovisualizer.visualizers.AudioBarsVisualizer
-import com.tayadehritik.audiovisualizer.visualizers.CircularBarsVisualizer
 
 class AudioVisualizerDreamService : DreamServiceCompat() {
     
@@ -42,7 +41,7 @@ class AudioVisualizerDreamService : DreamServiceCompat() {
             setComposeContent {
                 MaterialTheme {
                     Surface(modifier = Modifier.background(Color.Black)) {
-                        // Use the circular visualizer with mirrored effect
+                        // Use the bar visualizer
                         AudioBarsVisualizer(
                             state = visualizerState!!,
                             modifier = Modifier.fillMaxSize(),
